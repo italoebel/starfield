@@ -2,8 +2,8 @@
 #include <array>
 #include <random>
 
-const int STARFIELD_SIZE = 10;
-const int STAR_SIZE = 5;
+const int STARFIELD_SIZE = 50;
+const int STAR_SIZE = 3;
 const int HEIGHT = 600;
 const int WIDTH = 600;
 const int SPEED = 10;
@@ -12,7 +12,6 @@ const int SPEED = 10;
 std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_int_distribution<> dis;
-
 int rand_num(int start, int end) {
     // Update the distribution range
     dis.param(std::uniform_int_distribution<>::param_type(start, end));
@@ -24,8 +23,8 @@ class Star {
     float x, y, z;
 
     Star() {
-        this->x = rand_num(0,WIDTH);
-        this->y = rand_num(0,HEIGHT);
+        this->x = rand_num(-WIDTH/2,WIDTH/2);
+        this->y = rand_num(-HEIGHT/2, HEIGHT/2);
     }
 };
 
@@ -40,8 +39,6 @@ int main()
         starfield[i] = new Star();
     }
 
-    
-
     while (window.isOpen())
     {
         sf::Event event;
@@ -53,14 +50,31 @@ int main()
             window.close();
             }
         } 
-        
-        
-        starfield[0]->x+=0.01f;
+
+        for (int i = 0; i < STARFIELD_SIZE; i++){
+            if ((starfield[i]->x > 0) && (starfield[i]->y > 0)){
+                starfield[i]->x+=0.002f;
+                starfield[i]->y+=0.002f;
+            }
+            else if ((starfield[i]->x < 0) && (starfield[i]->y > 0)){
+                starfield[i]->x-=0.002f;
+                starfield[i]->y+=0.002f; 
+            }
+            else if ((starfield[i]->x > 0) && (starfield[i]->y < 0)){
+                starfield[i]->x+=0.002f;
+                starfield[i]->y-=0.002f; 
+            }
+            else if ((starfield[i]->x < 0) && (starfield[i]->y < 0)){
+                starfield[i]->x-=0.002f;
+                starfield[i]->y-=0.002f; 
+            }
+        }
 
         window.clear();
         for (int i = 0; i < STARFIELD_SIZE; i++){
             sf::CircleShape starshape(STAR_SIZE);
             starshape.setFillColor(sf::Color::White);
+            starshape.setOrigin(-WIDTH/2, -HEIGHT/2);
             starshape.setPosition((starfield[i]->x), (starfield[i]->y));
             window.draw(starshape);
         }
