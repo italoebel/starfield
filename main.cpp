@@ -1,12 +1,13 @@
 #include <SFML/Graphics.hpp>
 #include <array>
 #include <random>
+#include <vector>
 
-const int STARFIELD_SIZE = 50;
-const int STAR_SIZE = 3;
+const int STARFIELD_SIZE = 100;
+const float STAR_SIZE = 2.5f;
 const int HEIGHT = 600;
 const int WIDTH = 600;
-const int SPEED = 10;
+const float SPEED = 0.2f;
 
 // Random number generation
 std::random_device rd;
@@ -19,25 +20,57 @@ int rand_num(int start, int end) {
 }
 
 class Star {
-    public:
-    float x, y, z;
+public:
+    float x, y;
 
-    Star() {
-        this->x = rand_num(-WIDTH/2,WIDTH/2);
-        this->y = rand_num(-HEIGHT/2, HEIGHT/2);
+    Star() : starshape(STAR_SIZE) {
+        starshape.setPosition(x, y);
+        starshape.setFillColor(sf::Color::White);
+        starshape.setOrigin(WIDTH / 16.f, HEIGHT / 16.f);
+        x = rand_num(0, WIDTH);
+        y = rand_num(0, HEIGHT);
     }
+
+    void moveAwayFromCenter(sf::Vector2f center) {
+        sf::Vector2f direction = starshape.getPosition() - center;
+        float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+        direction /= length;
+        starshape.move(direction * SPEED);
+    }
+
+    void draw(sf::RenderWindow &window) {
+        window.draw(starshape);
+    }
+
+    void resetPosition(sf::Vector2f border){
+        sf::Vector2f position = starshape.getPosition();
+        if (sqrt(position.x * position.x + position.y * position.y) > sqrt(border.x * border.x + border.y * border.y) - 100){
+            starshape.setFillColor(sf::Color::Red);
+        }
+    }
+
+private:
+    sf::CircleShape starshape;    
 };
 
 //Array of Star()
-std::array<Star*, STARFIELD_SIZE> starfield;
+//std::array<Star*, STARFIELD_SIZE> starfield;
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(HEIGHT, WIDTH), "Window!");
+    sf::RenderWindow window(sf::VideoMode(HEIGHT, WIDTH), "Starfield");
 
-    for (int i = 0; i < STARFIELD_SIZE; i++){
-        starfield[i] = new Star();
+    //Vector of Star()
+    std::vector<Star> starfield;
+    for (int i = 0; i < STARFIELD_SIZE; ++i) {
+        // float x = rand_num(0, WIDTH);
+        // float y = rand_num(0, HEIGHT);
+        starfield.push_back(Star());
     }
+
+    // for (int i = 0; i < STARFIELD_SIZE; i++){
+    //     starfield[i] = new Star();
+    // }
 
     while (window.isOpen())
     {
@@ -50,33 +83,23 @@ int main()
             window.close();
             }
         } 
+        //Center vector
+        sf::Vector2f center(WIDTH / 2.f, HEIGHT / 2.f);
 
-        for (int i = 0; i < STARFIELD_SIZE; i++){
-            if ((starfield[i]->x > 0) && (starfield[i]->y > 0)){
-                starfield[i]->x+=0.002f;
-                starfield[i]->y+=0.002f;
-            }
-            else if ((starfield[i]->x < 0) && (starfield[i]->y > 0)){
-                starfield[i]->x-=0.002f;
-                starfield[i]->y+=0.002f; 
-            }
-            else if ((starfield[i]->x > 0) && (starfield[i]->y < 0)){
-                starfield[i]->x+=0.002f;
-                starfield[i]->y-=0.002f; 
-            }
-            else if ((starfield[i]->x < 0) && (starfield[i]->y < 0)){
-                starfield[i]->x-=0.002f;
-                starfield[i]->y-=0.002f; 
-            }
-        }
+        sf::Vector2f border(600.f, 600.f);
 
         window.clear();
-        for (int i = 0; i < STARFIELD_SIZE; i++){
-            sf::CircleShape starshape(STAR_SIZE);
-            starshape.setFillColor(sf::Color::White);
-            starshape.setOrigin(-WIDTH/2, -HEIGHT/2);
-            starshape.setPosition((starfield[i]->x), (starfield[i]->y));
-            window.draw(starshape);
+
+        //Center ball for test
+        sf::CircleShape centerpoint(5);
+        centerpoint.setFillColor(sf::Color::Red);
+        centerpoint.setPosition(WIDTH/2.f, HEIGHT/2.f);
+        window.draw(centerpoint);
+
+        for (auto &star : starfield) {
+            star.moveAwayFromCenter(center);
+            star.resetPosition(border);
+            star.draw(window);
         }
         window.display();
     }
