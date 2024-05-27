@@ -2,12 +2,13 @@
 #include <array>
 #include <random>
 #include <vector>
+#include <deque>
 
 const int STARFIELD_SIZE = 160;
 const float STAR_SIZE = 4.f;
 const int HEIGHT = 800;
 const int WIDTH = 800;
-const float SPEED = 8.f;
+const float SPEED = 10.f;
 
 // Random number generation
 std::random_device rd;
@@ -22,6 +23,8 @@ int rand_num(int start, int end) {
 class Star {
 public:
     float x, y, px, py;
+    std::deque<sf::Vector2f> tail;
+    const std::size_t maxTailLength = 10;
 
     Star() : starshape(0.f) {
         starshape.setPosition(x, y);
@@ -50,7 +53,11 @@ public:
         float sizeFactor = distanceToCenter / STAR_SIZE;
         starshape.setRadius(STAR_SIZE * sizeFactor / 100);
 
-        // Star trail
+        // Star tail
+        tail.push_front(starshape.getPosition());
+        if (tail.size() > maxTailLength) {
+            tail.pop_back();
+        }
 
         // SFML move function
         starshape.move(direction * speed);
@@ -64,10 +71,23 @@ public:
             starshape.setPosition(x, y);
             starshape.setRadius(0.f);
             //starshape.setFillColor(sf::Color::Red);
+
+            tail.clear();
         }
     }
 
     void draw(sf::RenderWindow &window) {
+        
+        // Draw the trail
+        for (std::size_t i = 0; i < tail.size() - 1; ++i) {
+            sf::Vertex line[] = {
+                sf::Vertex(tail[i], sf::Color::White),
+                sf::Vertex(tail[i + 1], sf::Color(255, 255, 255, 255 * (1 - static_cast<float>(i) / tail.size())))
+            };
+            window.draw(line, 2, sf::Lines);
+        }
+
+        // Draw the star
         window.draw(starshape);
     }
 
@@ -116,13 +136,15 @@ int main()
         // // Center ball for test
         // sf::CircleShape centerpoint(5);
         // centerpoint.setFillColor(sf::Color::Red);
-        // centerpoint.setPosition(WIDTH/2.f - 5, HEIGHT/2.f - 5);
+        // centerpoint.setPosition(10, 10);
+        // centerpoint.setPosition(WIDTH - 5, HEIGHT - 5);
+        // centerpoint.setOrigin(WIDTH/2, HEIGHT/2);
         // window.draw(centerpoint);
 
         for (Star& star : starfield) {
             star.moveAwayFromCenter(center);
-            star.resetPosition();
             star.draw(window);
+            star.resetPosition();
         }
         window.display();
     }
